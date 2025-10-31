@@ -68,6 +68,8 @@ rooms/<roomId>/reservations (sub-collection)
 - [ ] Camera/photo upload
 - [ ] Notifications
 
+
+
 ## Design Progress
 - [x] Login/Sign Up UI implemented (simple but great starting point)
 - [x] Mock UI designed
