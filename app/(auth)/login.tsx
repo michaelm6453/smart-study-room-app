@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Image } from "react-native";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../lib/firebase";
 import { router } from "expo-router";
@@ -7,6 +7,8 @@ import Screen from "../../components/Screen";
 import Input from "../../components/Input";
 import Button from "../../components/Button";
 import { colors, spacing, radius, type } from "../../lib/theme";
+
+const heroImage = require("../../assets/ontariotechu-og-image.jpg");
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -35,6 +37,8 @@ export default function Login() {
 
   return (
     <Screen>
+      <Image source={heroImage} style={styles.hero} resizeMode="cover" />
+      <View style={{ height: spacing.md }} />
       <View style={styles.card}>
         <Text style={[type.h1, styles.title]}>Smart Study Room</Text>
         <Text style={[type.small, styles.subtitle]}>Sign in or create an account</Text>
@@ -67,13 +71,21 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    width: "100%",
+    height: 180,
+    borderRadius: radius.lg,
+  },
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: spacing.xl * 1.2,
+    marginTop: spacing.md,
+    shadowColor: "#102A43",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   title: { color: colors.text, textAlign: "center" },
   subtitle: { color: colors.subtext, textAlign: "center", marginTop: spacing.xs },

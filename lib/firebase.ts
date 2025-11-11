@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import Constants from "expo-constants";
 
 const extra = (Constants.expoConfig?.extra || {}) as Record<string, string | undefined>;
@@ -19,4 +20,5 @@ const app = initializeApp({
 // Export typed singletons so the rest of the app can import them safely.
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 export { app };

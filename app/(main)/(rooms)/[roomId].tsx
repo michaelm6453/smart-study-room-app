@@ -8,9 +8,13 @@ import {
   ScrollView,
   Platform,
   Alert,
+  Image,
+  Linking,
 } from "react-native";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { useLocalSearchParams, router } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
+import { WebView } from "react-native-webview";
 import { auth } from "../../../lib/firebase";
 import {
   BookingConflictError,
@@ -21,6 +25,8 @@ import {
   fetchRoom,
   observeReservations,
 } from "../../../lib/store";
+import { uploadConditionPhoto } from "../../../lib/storage";
+import { getStaticMapUrl, getGoogleMapsDirectionsUrl, getEmbeddedMapHtml } from "../../../lib/maps";
 import Screen from "../../../components/Screen";
 import Button from "../../../components/Button";
 import Input from "../../../components/Input";
@@ -42,6 +48,8 @@ export default function RoomDetailsScreen() {
   const [start, setStart] = useState(() => getDefaultStart());
   const [end, setEnd] = useState(() => getDefaultEnd(getDefaultStart()));
   const [creating, setCreating] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photo, setPhoto] = useState<string | null>(null);
 
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -138,9 +146,18 @@ export default function RoomDetailsScreen() {
 
     setCreating(true);
     try {
+      const user = auth.currentUser;
+      let photoUrl: string | null = null;
+
+      if (photo && user) {
+        setUploadingPhoto(true);
+        photoUrl = await uploadConditionPhoto(photo, user.uid);
+      }
+
       // Create the reservation with embedded room metadata for history views.
-      await createReservation(room, { start, end, purpose: purpose.trim() || undefined });
+      await createReservation(room, { start, end, purpose: purpose.trim() || undefined, photoUrl });
       setPurpose("");
+      setPhoto(null);
       Alert.alert("Reservation confirmed", "Your reservation has been created.");
     } catch (err: any) {
       if (err instanceof BookingConflictError) {
@@ -151,8 +168,9 @@ export default function RoomDetailsScreen() {
       }
     } finally {
       setCreating(false);
+      setUploadingPhoto(false);
     }
-  }, [end, purpose, roomId, room, start]);
+  }, [end, photo, purpose, room, roomId, start]);
 
   const handleCancelReservation = useCallback(
     (reservationId: string) => {
@@ -182,6 +200,51 @@ export default function RoomDetailsScreen() {
   );
 
   const userId = auth.currentUser?.uid;
+  const mapUrl =
+    room?.location && getStaticMapUrl(room.location.lat, room.location.lng, room.location.label);
+  const embeddedHtml =
+    room?.location && getEmbeddedMapHtml(room.location.lat, room.location.lng, room.location.label);
+
+  const openMaps = useCallback(() => {
+    if (room?.location) {
+      const url = getGoogleMapsDirectionsUrl(room.location.lat, room.location.lng);
+      Linking.openURL(url).catch(() => Alert.alert("Unable to open maps"));
+    }
+  }, [room?.location?.lat, room?.location?.lng]);
+
+  const pickPhoto = useCallback(async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Allow photo access to attach room condition photos.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setPhoto(result.assets[0].uri);
+    }
+  }, []);
+
+  const capturePhoto = useCallback(async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Camera access is required to take a condition photo.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setPhoto(result.assets[0].uri);
+    }
+  }, []);
 
   return (
     <Screen>
@@ -231,6 +294,25 @@ export default function RoomDetailsScreen() {
             ) : null}
           </View>
 
+          {room.location ? (
+            <View style={styles.card}>
+              <Text style={[type.h2, styles.sectionTitle]}>Campus map</Text>
+              <Text style={[type.small, styles.sectionSubtitle]}>
+                {room.location.label || "Ontario Tech University"}
+              </Text>
+              {embeddedHtml ? (
+                <WebView
+                  originWhitelist={["*"]}
+                  source={{ html: embeddedHtml }}
+                  style={styles.mapWeb}
+                />
+              ) : mapUrl ? (
+                <Image source={{ uri: mapUrl }} style={styles.mapImage} resizeMode="cover" />
+              ) : null}
+              <Button title="Open in Google Maps" variant="secondary" onPress={openMaps} />
+            </View>
+          ) : null}
+
           <View style={styles.card}>
             <Text style={[type.h2, styles.sectionTitle]}>Book a time</Text>
             <Text style={[type.small, styles.sectionSubtitle]}>
@@ -277,9 +359,32 @@ export default function RoomDetailsScreen() {
             <Button
               title={creating ? "Creating..." : "Reserve room"}
               onPress={handleCreateReservation}
-              disabled={creating}
+              disabled={creating || uploadingPhoto}
               style={styles.primaryButton}
             />
+            <Button
+              title={
+                uploadingPhoto
+                  ? "Uploading photo..."
+                  : photo
+                  ? "Replace condition photo"
+                  : "Attach condition photo"
+              }
+              variant="secondary"
+              onPress={pickPhoto}
+              disabled={uploadingPhoto}
+              style={styles.photoBtn}
+            />
+            <Button
+              title="Take condition photo"
+              variant="secondary"
+              onPress={capturePhoto}
+              disabled={uploadingPhoto}
+              style={styles.photoBtn}
+            />
+            {photo ? (
+              <Image source={{ uri: photo }} style={styles.photoPreview} resizeMode="cover" />
+            ) : null}
           </View>
 
           <View style={styles.card}>
@@ -305,6 +410,13 @@ export default function RoomDetailsScreen() {
                       </Text>
                       {reservation.purpose ? (
                         <Text style={[type.small, styles.reservationPurpose]}>{reservation.purpose}</Text>
+                      ) : null}
+                      {reservation.photoUrl ? (
+                        <Image
+                          source={{ uri: reservation.photoUrl }}
+                          style={styles.photoThumb}
+                          resizeMode="cover"
+                        />
                       ) : null}
                     </View>
                     {ownedByUser && !isPast ? (
@@ -421,6 +533,13 @@ const styles = StyleSheet.create({
   sectionSubtitle: { color: colors.subtext },
   label: { color: colors.subtext, marginBottom: spacing.xs / 2 },
   primaryButton: { marginTop: spacing.md },
+  photoBtn: { marginTop: spacing.sm },
+  photoPreview: {
+    width: "100%",
+    height: 180,
+    borderRadius: radius.md,
+    marginTop: spacing.sm,
+  },
   errorCard: {
     backgroundColor: colors.card,
     borderRadius: radius.lg,
@@ -446,4 +565,22 @@ const styles = StyleSheet.create({
   reservationMeta: { color: colors.subtext },
   reservationPurpose: { color: colors.subtext, fontStyle: "italic" },
   cancelBtn: { minWidth: 90 },
+  mapImage: {
+    width: "100%",
+    height: 160,
+    borderRadius: radius.md,
+  },
+  mapWeb: {
+    width: "100%",
+    height: 200,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    marginBottom: spacing.sm,
+  },
+  photoThumb: {
+    width: 90,
+    height: 90,
+    borderRadius: radius.sm,
+    marginTop: spacing.xs,
+  },
 });

@@ -13,6 +13,7 @@ import {
   observeRooms,
   updateRoom,
 } from "../../../lib/store";
+import { ontarioTechRooms } from "../../../lib/sampleRooms";
 
 type FormState = {
   id?: string;
@@ -25,6 +26,9 @@ type FormState = {
   openingStart: string;
   openingEnd: string;
   imageUrl: string;
+  locationLabel: string;
+  locationLat: string;
+  locationLng: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -38,6 +42,9 @@ const EMPTY_FORM: FormState = {
   openingStart: "",
   openingEnd: "",
   imageUrl: "",
+  locationLabel: "",
+  locationLat: "",
+  locationLng: "",
 };
 
 export default function ManageRoomsScreen() {
@@ -47,6 +54,7 @@ export default function ManageRoomsScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -89,6 +97,9 @@ export default function ManageRoomsScreen() {
       openingStart: selectedRoom.openingHours?.start ?? "",
       openingEnd: selectedRoom.openingHours?.end ?? "",
       imageUrl: selectedRoom.imageUrl ?? "",
+      locationLabel: selectedRoom.location?.label ?? "",
+      locationLat: selectedRoom.location ? String(selectedRoom.location.lat) : "",
+      locationLng: selectedRoom.location ? String(selectedRoom.location.lng) : "",
     });
   }, [selectedRoom]);
 
@@ -118,6 +129,22 @@ export default function ManageRoomsScreen() {
 
     const openingStart = form.openingStart.trim();
     const openingEnd = form.openingEnd.trim();
+    const lat = form.locationLat.trim();
+    const lng = form.locationLng.trim();
+    const latNumber = lat.length ? Number(lat) : undefined;
+    const lngNumber = lng.length ? Number(lng) : undefined;
+    const hasCoords =
+      latNumber !== undefined &&
+      lngNumber !== undefined &&
+      Number.isFinite(latNumber) &&
+      Number.isFinite(lngNumber);
+    const location = hasCoords
+      ? {
+          lat: latNumber!,
+          lng: lngNumber!,
+          label: form.locationLabel.trim() || undefined,
+        }
+      : undefined;
 
     return {
       name: form.name.trim(),
@@ -134,6 +161,7 @@ export default function ManageRoomsScreen() {
             }
           : undefined,
       imageUrl: form.imageUrl.trim() || undefined,
+      location,
     };
   }
 
@@ -193,6 +221,31 @@ export default function ManageRoomsScreen() {
     ]);
   }
 
+  async function handleSeedSampleRooms() {
+    Alert.alert("Seed Ontario Tech rooms?", "This will create a few demo rooms with coordinates.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Seed",
+        onPress: async () => {
+          try {
+            setSeeding(true);
+            setError(null);
+            setSuccess(null);
+            for (const sample of ontarioTechRooms) {
+              await createRoom(sample, { id: sample.id });
+            }
+            setSuccess("Ontario Tech sample rooms added.");
+          } catch (err: any) {
+            console.error("Seed rooms failed", err);
+            setError(err?.message ?? "Unable to seed sample rooms.");
+          } finally {
+            setSeeding(false);
+          }
+        },
+      },
+    ]);
+  }
+
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -205,6 +258,13 @@ export default function ManageRoomsScreen() {
 
         <View style={styles.toolbar}>
           <Button title="Create new room" onPress={handleCreateNew} variant="secondary" />
+          <Button
+            title={seeding ? "Seeding..." : "Seed Ontario Tech rooms"}
+            onPress={handleSeedSampleRooms}
+            variant="secondary"
+            disabled={seeding}
+            style={styles.seedBtn}
+          />
         </View>
 
         {loading ? (
@@ -326,6 +386,32 @@ export default function ManageRoomsScreen() {
             autoCapitalize="none"
           />
 
+          <View style={{ height: spacing.md }} />
+          <Text style={[type.small, styles.label]}>Campus location (for maps)</Text>
+          <Input
+            placeholder="Science Building Entrance"
+            value={form.locationLabel}
+            onChangeText={(value) => handleFieldChange("locationLabel", value)}
+          />
+          <View style={styles.hoursRow}>
+            <Input
+              placeholder="43.9459"
+              keyboardType="decimal-pad"
+              value={form.locationLat}
+              onChangeText={(value) => handleFieldChange("locationLat", value)}
+              autoCapitalize="none"
+              containerStyle={styles.hourInput}
+            />
+            <Input
+              placeholder="-78.8964"
+              keyboardType="decimal-pad"
+              value={form.locationLng}
+              onChangeText={(value) => handleFieldChange("locationLng", value)}
+              autoCapitalize="none"
+              containerStyle={styles.hourInput}
+            />
+          </View>
+
           <View style={{ height: spacing.lg }} />
           <Button
             title={saving ? "Saving..." : selectedId ? "Save changes" : "Create room"}
@@ -361,7 +447,9 @@ const styles = StyleSheet.create({
   toolbar: {
     flexDirection: "row",
     justifyContent: "flex-end",
+    gap: spacing.sm,
   },
+  seedBtn: { minWidth: 190 },
   loading: {
     alignItems: "center",
     justifyContent: "center",

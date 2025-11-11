@@ -8,6 +8,7 @@ import {
   FlatList,
   RefreshControl,
   Pressable,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { fetchRooms, observeRooms, Room } from "../../lib/store";
@@ -17,6 +18,7 @@ import Input from "../../components/Input";
 import { colors, spacing, radius, type } from "../../lib/theme";
 
 const MAX_VISIBLE_AMENITIES = 3;
+const heroImage = require("../../assets/ontariotechu-og-image.jpg");
 
 function RoomCard({ room, onPress }: { room: Room; onPress: () => void }) {
   // Slice amenities so the card stays compact on smaller screens.
@@ -34,6 +36,9 @@ function RoomCard({ room, onPress }: { room: Room; onPress: () => void }) {
         <Text style={[type.h2, styles.roomName]}>{room.name}</Text>
         <Text style={[type.small, styles.capacity]}>{capacityLabel}</Text>
       </View>
+      {room.location?.label ? (
+        <Text style={[type.small, styles.locationLabel]}>{room.location.label}</Text>
+      ) : null}
       <Text style={[type.small, styles.location]}>{location}</Text>
       {room.description ? (
         <Text style={[type.small, styles.description]} numberOfLines={2}>
@@ -162,6 +167,7 @@ export default function Home() {
 
   return (
     <Screen>
+      <Image source={heroImage} style={styles.hero} resizeMode="cover" />
       <View style={styles.pageTitle}>
         <Text style={[type.h1, styles.title]}>Reserve a study room</Text>
         <Text style={[type.small, styles.subtitle]}>
@@ -298,8 +304,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    shadowColor: "#102A43",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   roomCardPressed: {
     opacity: 0.85,
@@ -313,6 +322,7 @@ const styles = StyleSheet.create({
   roomName: { color: colors.text },
   capacity: { color: colors.subtext },
   location: { color: colors.subtext },
+  locationLabel: { color: colors.accent, marginTop: spacing.xs / 2 },
   description: { color: colors.subtext, marginTop: spacing.xs },
   badgeRow: {
     flexDirection: "row",
@@ -331,4 +341,10 @@ const styles = StyleSheet.create({
   badgeText: { color: colors.subtext },
   hours: { color: colors.subtext, marginTop: spacing.md },
   cardCta: { color: colors.primary, marginTop: spacing.md },
+  hero: {
+    width: "100%",
+    height: 160,
+    borderRadius: radius.lg,
+    marginBottom: spacing.lg,
+  },
 });

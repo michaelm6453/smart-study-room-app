@@ -1,19 +1,19 @@
 // Central palette + spacing tokens so the app stays on-brand and consistent.
 export const colors = {
-  bg: "#001B3A",
-  card: "#0E2F56",
-  text: "#F5F8FE",
-  subtext: "#A7BCD8",
-  primary: "#0054A4",
-  accent: "#F47920",
+  bg: "#E9F2FD",
+  card: "#FFFFFF",
+  text: "#102A43",
+  subtext: "#4F6C8D",
+  primary: "#1876D1",
+  accent: "#FF8A3C",
   danger: "#FF6B6B",
-  border: "rgba(255,255,255,0.14)",
-  inputBg: "rgba(255,255,255,0.08)",
-  inputBorder: "rgba(255,255,255,0.18)",
+  border: "rgba(16,42,67,0.08)",
+  inputBg: "rgba(24,118,209,0.08)",
+  inputBorder: "rgba(16,42,67,0.18)",
 } as const;
 
 // Spacing + radii keep paddings/rounded corners predictable.
-export const spacing = { xs: 6, sm: 10, md: 16, lg: 20, xl: 28 } as const;
+export const spacing = { xs: 6, sm: 12, md: 18, lg: 26, xl: 34 } as const;
 export const radius = { sm: 10, md: 14, lg: 20, pill: 999 } as const;
 
 // Give fontWeight literal types so RN accepts them.

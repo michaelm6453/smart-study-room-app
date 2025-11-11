@@ -33,6 +33,11 @@ export type Room = {
     start: string;
     end: string;
   };
+  location?: {
+    lat: number;
+    lng: number;
+    label?: string;
+  };
 };
 
 export type Reservation = {
@@ -46,6 +51,7 @@ export type Reservation = {
   start: Date;
   end: Date;
   purpose?: string;
+  photoUrl?: string | null;
   status: "confirmed" | "cancelled";
   createdAt?: Date;
   cancelledAt?: Date;
@@ -55,6 +61,7 @@ export type ReservationInput = {
   start: Date;
   end: Date;
   purpose?: string;
+  photoUrl?: string | null;
 };
 
 export type RoomInput = {
@@ -69,6 +76,11 @@ export type RoomInput = {
     end: string;
   };
   imageUrl?: string;
+  location?: {
+    lat: number;
+    lng: number;
+    label?: string;
+  };
 };
 
 export type RoomUpdateInput = Partial<RoomInput>;
@@ -97,6 +109,11 @@ type RoomDocument = {
     start: string;
     end: string;
   };
+  location?: {
+    lat?: number;
+    lng?: number;
+    label?: string;
+  };
 };
 
 type ReservationDocument = {
@@ -108,6 +125,7 @@ type ReservationDocument = {
   start: Timestamp;
   end: Timestamp;
   purpose?: string | null;
+  photoUrl?: string | null;
   status?: "confirmed" | "cancelled";
   createdAt?: Timestamp;
   cancelledAt?: Timestamp;
@@ -125,6 +143,14 @@ const buildRoom = (id: string, data: RoomDocument): Room => {
     description: data.description ?? undefined,
     imageUrl: data.imageUrl ?? undefined,
     openingHours: data.openingHours,
+    location:
+      typeof data.location?.lat === "number" && typeof data.location?.lng === "number"
+        ? {
+            lat: data.location.lat,
+            lng: data.location.lng,
+            label: data.location.label ?? undefined,
+          }
+        : undefined,
   };
 };
 
@@ -150,6 +176,7 @@ const buildReservation = (id: string, roomId: string, data: ReservationDocument)
     start: toDate(data.start) ?? new Date(),
     end: toDate(data.end) ?? new Date(),
     purpose: data.purpose ?? undefined,
+    photoUrl: data.photoUrl ?? null,
     status: data.status ?? "confirmed",
     createdAt: toDate(data.createdAt),
     cancelledAt: toDate(data.cancelledAt),
@@ -234,6 +261,37 @@ const normalizeRoomInput = (input: RoomInput | RoomUpdateInput, options?: { part
     return { start, end };
   };
 
+  const normalizeLocation = () => {
+    const value = (input as RoomInput).location;
+    if (value === undefined) {
+      return partial ? undefined : null;
+    }
+    if (!value) {
+      return null;
+    }
+
+    const toNumber = (v: unknown) => {
+      if (typeof v === "number") return v;
+      if (typeof v === "string" && v.trim().length) {
+        const parsed = Number(v);
+        return Number.isNaN(parsed) ? undefined : parsed;
+      }
+      return undefined;
+    };
+
+    const lat = toNumber(value.lat);
+    const lng = toNumber(value.lng);
+    if (lat === undefined || lng === undefined) {
+      return null;
+    }
+
+    return {
+      lat,
+      lng,
+      label: normalizeString(value.label) ?? undefined,
+    };
+  };
+
   const payload: Record<string, unknown> = {
     name: normalizeString(input.name),
     building: normalizeString(input.building),
@@ -245,6 +303,7 @@ const normalizeRoomInput = (input: RoomInput | RoomUpdateInput, options?: { part
     description: normalizeString(input.description),
     openingHours: normalizeOpeningHours(),
     imageUrl: normalizeString(input.imageUrl),
+    location: normalizeLocation(),
   };
 
   Object.keys(payload).forEach((key) => {
@@ -407,6 +466,7 @@ export async function createReservation(room: Room, input: ReservationInput) {
     start: Timestamp.fromDate(input.start),
     end: Timestamp.fromDate(input.end),
     purpose: input.purpose?.trim() || null,
+    photoUrl: input.photoUrl || null,
     status: "confirmed",
     createdAt: serverTimestamp(),
   });

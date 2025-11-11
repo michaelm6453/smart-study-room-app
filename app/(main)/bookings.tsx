@@ -8,6 +8,7 @@ import {
   FlatList,
   RefreshControl,
   Alert,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import Screen from "../../components/Screen";
@@ -218,6 +219,9 @@ function ReservationSection({
               {reservation.status === "cancelled" ? (
                 <Text style={[type.small, styles.cancelledBadge]}>Cancelled</Text>
               ) : null}
+              {reservation.photoUrl ? (
+                <Image source={{ uri: reservation.photoUrl }} style={styles.reservationPhoto} />
+              ) : null}
             </View>
             <View style={styles.actionColumn}>
               <Button
@@ -318,4 +322,10 @@ const styles = StyleSheet.create({
     width: 120,
   },
   actionBtn: { paddingHorizontal: spacing.sm },
+  reservationPhoto: {
+    width: "100%",
+    height: 140,
+    borderRadius: radius.md,
+    marginTop: spacing.xs,
+  },
 });
