@@ -199,12 +199,13 @@ export default function RoomDetailsScreen() {
     [roomId],
   );
 
+  // Google Maps URL helpers.
   const userId = auth.currentUser?.uid;
   const mapUrl =
     room?.location && getStaticMapUrl(room.location.lat, room.location.lng, room.location.label);
   const embeddedHtml =
     room?.location && getEmbeddedMapHtml(room.location.lat, room.location.lng, room.location.label);
-
+// Open the location in the Google Maps app or browser.
   const openMaps = useCallback(() => {
     if (room?.location) {
       const url = getGoogleMapsDirectionsUrl(room.location.lat, room.location.lng);
@@ -212,40 +213,41 @@ export default function RoomDetailsScreen() {
     }
   }, [room?.location?.lat, room?.location?.lng]);
 
+  // Photo picking and capturing handlers.
   const pickPhoto = useCallback(async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert("Permission needed", "Allow photo access to attach room condition photos.");
       return;
     }
-
+// Launch the image library to pick a photo.
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
       quality: 0.7,
     });
-
+// If the user picked a photo, update state.
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
     }
   }, []);
-
+// Capture a new photo using the device camera.
   const capturePhoto = useCallback(async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
       Alert.alert("Permission needed", "Camera access is required to take a condition photo.");
       return;
     }
-
+// Launch the camera to take a new photo.
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       quality: 0.7,
     });
-
+// If the user took a photo, update state.
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
     }
   }, []);
-
+// Render loading, error, or room details + booking UI.
   return (
     <Screen>
       {loadingRoom ? (

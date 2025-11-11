@@ -9,7 +9,7 @@ Final Project for Mobile Applications Class.
 - React Native (mobile UI framework)
 - TypeScript (type safety)
 - Firebase Auth (email/password)
-- Firestore (rooms, reservations) and Cloud Functions (planned)
+- Firestore (rooms, reservations) and Cloud Functions
 - Firebase Admin SDK tooling (seeding scripts)
 
 ## Local setup
