@@ -1,15 +1,17 @@
 // Profile tab: shows user info, sign-out, and entry point to admin tools.
 import React from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { signOut } from "firebase/auth";
 import Screen from "../../components/Screen";
 import Button from "../../components/Button";
+import VideoHighlight from "../../components/VideoHighlight";
 import { colors, spacing, radius, type } from "../../lib/theme";
 import { auth } from "../../lib/firebase";
 
 export default function ProfileScreen() {
   const user = auth.currentUser;
+  const tourVideo = { uri: "https://youtu.be/Y_YLo5kfD-Y" };
 
   const onSignOut = () => {
     // Friendly confirm so users don't accidentally boot themselves.
@@ -33,13 +35,19 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           <Text style={[type.h1, styles.title]}>Profile</Text>
           <Text style={[type.small, styles.subtitle]}>
             Signed in as <Text style={styles.bold}>{user?.email}</Text>
           </Text>
         </View>
+
+        <VideoHighlight
+          title="Smart Study Room tour"
+          description="Take a quick walkthrough of the app before you start booking spaces."
+          source={tourVideo}
+        />
 
         <View style={styles.section}>
           <Text style={[type.h2, styles.sectionTitle]}>Your Account</Text>
@@ -58,7 +66,7 @@ export default function ProfileScreen() {
             style={styles.manageBtn}
           />
         </View>
-      </View>
+      </ScrollView>
     </Screen>
   );
 }

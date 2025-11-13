@@ -1,24 +1,17 @@
 // Browse screen: lists Firestore rooms, adds search, and links to details.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  Pressable,
-  Image,
-} from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, FlatList, RefreshControl, Pressable, Image } from "react-native";
 import { router } from "expo-router";
 import { fetchRooms, observeRooms, Room } from "../../lib/store";
 import Screen from "../../components/Screen";
 import Button from "../../components/Button";
 import Input from "../../components/Input";
+import VideoHighlight from "../../components/VideoHighlight";
 import { colors, spacing, radius, type } from "../../lib/theme";
 
 const MAX_VISIBLE_AMENITIES = 3;
 const heroImage = require("../../assets/ontariotechu-og-image.jpg");
+const STUDY_TOUR_VIDEO = { uri: "https://youtu.be/Y_YLo5kfD-Y" };
 
 function RoomCard({ room, onPress }: { room: Room; onPress: () => void }) {
   // Slice amenities so the card stays compact on smaller screens.
@@ -165,8 +158,20 @@ export default function Home() {
 
   const showEmpty = !loading && rooms.length === 0;
 
-  return (
-    <Screen>
+  if (loading) {
+    return (
+      <Screen>
+        <View style={styles.loading}>
+          <ActivityIndicator color={colors.primary} />
+          <View style={{ height: spacing.sm }} />
+          <Text style={[type.small, styles.loadingText]}>Loading rooms…</Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  const listHeader = (
+    <View style={styles.listHeader}>
       <Image source={heroImage} style={styles.hero} resizeMode="cover" />
       <View style={styles.pageTitle}>
         <Text style={[type.h1, styles.title]}>Reserve a study room</Text>
@@ -174,6 +179,13 @@ export default function Home() {
           Explore campus study spaces and find the right fit for your next session.
         </Text>
       </View>
+
+      <VideoHighlight
+        title="Smart Study Room tour"
+        description="Watch best practices before you book your next session."
+        source={STUDY_TOUR_VIDEO}
+        style={styles.videoCard}
+      />
 
       <Input
         placeholder="Search by name, building, or amenities"
@@ -206,49 +218,42 @@ export default function Home() {
           />
         </View>
       ) : null}
+    </View>
+  );
 
-      {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={colors.primary} />
-          <View style={{ height: spacing.sm }} />
-          <Text style={[type.small, styles.loadingText]}>Loading rooms…</Text>
-        </View>
-      ) : showEmpty ? (
-        <View style={styles.empty}>
-          <Text style={[type.body, styles.emptyTitle]}>No rooms yet</Text>
-          <Text style={[type.small, styles.emptyText]}>
-            Add rooms via the admin manager (Profile tab) to get started.
-          </Text>
-          <Button
-            title="Refresh"
-            variant="secondary"
-            onPress={refresh}
-            style={styles.emptyButton}
-          />
-        </View>
-      ) : (
-        <FlatList
-          data={filteredRooms}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <RoomCard room={item} onPress={() => openRoom(item.id)} />}
-          contentContainerStyle={styles.listContent}
-          ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.subtext} />
-          }
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            search ? (
-              <View style={styles.empty}>
-                <Text style={[type.body, styles.emptyTitle]}>No rooms found</Text>
-                <Text style={[type.small, styles.emptyText]}>
-                  Try adjusting your search keywords or clearing the filter.
-                </Text>
-              </View>
-            ) : null
-          }
-        />
-      )}
+  const emptyComponent = showEmpty ? (
+    <View style={styles.empty}>
+      <Text style={[type.body, styles.emptyTitle]}>No rooms yet</Text>
+      <Text style={[type.small, styles.emptyText]}>
+        Add rooms via the admin manager (Profile tab) to get started.
+      </Text>
+      <Button title="Refresh" variant="secondary" onPress={refresh} style={styles.emptyButton} />
+    </View>
+  ) : search ? (
+    <View style={styles.empty}>
+      <Text style={[type.body, styles.emptyTitle]}>No rooms found</Text>
+      <Text style={[type.small, styles.emptyText]}>
+        Try adjusting your search keywords or clearing the filter.
+      </Text>
+    </View>
+  ) : null;
+
+  return (
+    <Screen>
+      <FlatList
+        data={filteredRooms}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => <RoomCard room={item} onPress={() => openRoom(item.id)} />}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={listHeader}
+        ListHeaderComponentStyle={styles.listHeaderSpacing}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.subtext} />
+        }
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={emptyComponent}
+      />
     </Screen>
   );
 }
@@ -297,8 +302,13 @@ const styles = StyleSheet.create({
   emptyText: { color: colors.subtext },
   emptyButton: { marginTop: spacing.md },
   listContent: {
-    paddingVertical: spacing.lg,
     paddingBottom: spacing.xl * 1.5,
+  },
+  listHeader: {
+    gap: spacing.md,
+  },
+  listHeaderSpacing: {
+    paddingBottom: spacing.lg,
   },
   roomCard: {
     backgroundColor: colors.card,
@@ -346,5 +356,8 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: radius.lg,
     marginBottom: spacing.lg,
+  },
+  videoCard: {
+    marginTop: spacing.sm,
   },
 });
