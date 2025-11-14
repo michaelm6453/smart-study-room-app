@@ -2,7 +2,7 @@
 
 A cross-platform mobile application that allows university students to search, reserve, and manage study rooms in real time.
 Built with Expo, React Native, and TypeScript, and powered by Firebase for authentication and cloud data storage.
-Final Project for Mobile Applications Class. Here is a video of the current working version: https://youtube.com/shorts/CYc5tYUbFOI?si=1uderqilNRFHWsaF
+Final Project for Mobile Applications Class. Here is a video of the November 11th working version (the current version now has audio/video embedded): https://youtube.com/shorts/CYc5tYUbFOI?si=1uderqilNRFHWsaF
 
 ## Stack
 - Expo (React Native tooling and dev runtime)
