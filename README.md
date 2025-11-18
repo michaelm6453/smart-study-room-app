@@ -79,26 +79,12 @@ rooms/<roomId>/reservations (sub-collection)
 - [x] Room detail page (with book/cancel logic)
 - [x] Google Maps integration (static preview + deep link)
 - [x] Camera/photo upload for room condition check-ins
-- [ ] Notifications
 
 ## Design Progress
 - [x] Login/Sign Up UI implemented (simple but great starting point)
 - [x] Mock UI designed
-- [ ] Mock UI implemented
 
 ## Highlighted features
 - Ontario Tech themed Browse screen with hero imagery plus room search/filtering.
 - Room detail page shows static Google Maps previews with one-tap directions.
 - Reservation flow supports attaching a “room condition” photo that uploads to Firebase Storage and appears in both the room timeline and the Bookings tab.
-
-## Upcoming roadmap
-
-### Camera accountability features
-1. Harden Firebase Storage rules so only reservation owners can upload/view their condition photos.
-2. Replace the gallery picker with an in-app camera flow (`ImagePicker.launchCameraAsync`) for on-the-spot documentation.
-3. Extend the bookings detail view with multi-photo support and timestamps.
-
-### Maps and navigation
-1. Use `expo-location` to detect the user's current position for future “navigate from here” flows.
-2. Swap the static preview with an interactive `MapView` that highlights every room on campus.
-3. Maintain per-building metadata (entrance instructions, floor plans) and support indoor wayfinding.
